@@ -7,10 +7,15 @@ import android.content.Context
 import android.content.DialogInterface
 import android.util.Log
 import android.widget.DatePicker
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
 
 import androidx.compose.material.icons.Icons
@@ -19,8 +24,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -33,12 +40,26 @@ import java.util.*
 import com.example.taskmanager.R
 
 
+
+
 @Composable
 fun CreateTask(onBack: () -> Unit) {
+    var color by remember{ mutableStateOf(Color(0xFF03DAC5)) }
+
+    var nameTask by remember{ mutableStateOf("")}
     Scaffold(
         topBar = {
-            CreateTaskTopBar(onBack)
-        }) {
+            CreateTaskTopBar(color,     onBack)
+        },
+        bottomBar={
+            BottomButton(
+                color = color,
+                onSave = {
+
+                }
+            )
+        }
+    ) {
             paddingValues ->
 
         Column(
@@ -48,21 +69,64 @@ fun CreateTask(onBack: () -> Unit) {
             ColorTask(
                 Modifier.padding(20.dp),
                 onChangeColor = {
-
+                    color = it
                 }
             )
+            Divider(modifier = Modifier.padding(horizontal = 20.dp))
+
+            NameTask(
+                color = color,
+                value = nameTask,
+                modifier = Modifier.padding(20.dp),
+                onSetName = { nameTask = it })
+
+            Divider(modifier = Modifier.padding(horizontal = 20.dp))
 
             Deadline(
                 modifier = Modifier.padding(20.dp),
                 changeDate = {
 
-                }
+                },
+                color = color
             )
+
+            Divider(modifier = Modifier.padding(horizontal = 20.dp))
+
+            TaskType(
+                modifier = Modifier.padding(20.dp),
+                addType = {
+
+                },
+                _color = color
+            )
+
+            Divider(modifier = Modifier.padding(horizontal = 20.dp))
         
         }
     }
 }
 
+@Composable
+fun CreateTaskTopBar(
+    color: Color,
+    onBack: () -> Unit
+) {
+    TopAppBar(
+        modifier = Modifier.statusBarsPadding(),
+        title = { Text(text = "Новая задача") },
+        navigationIcon = {
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "",
+                    tint = color
+                )
+            }
+        },
+        backgroundColor = MaterialTheme.colors.background,
+        elevation = 0.dp
+    )
+}
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
@@ -88,11 +152,12 @@ fun ColorTask(
         modifier = modifier
     )
 
-    
+
+    val (selected, onSelected) = remember { mutableStateOf(listColors[0]) }
 
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(20.dp),
-        contentPadding = PaddingValues(20.dp)
+        contentPadding = PaddingValues(20.dp),
     ){
         items(listColors){
                 color ->
@@ -101,8 +166,10 @@ fun ColorTask(
                 modifier = Modifier.size(30.dp),
                 shape = CircleShape,
                 onClick = {
+                    onSelected(color)
                     onChangeColor(color)
-                }
+                },
+                border = if (color == selected) BorderStroke(1.dp, Color.Black) else null
             ) {
 
             }
@@ -110,14 +177,44 @@ fun ColorTask(
     }
 
 
-    Divider(modifier = modifier)
+
 }
 
 
 @Composable
-fun Deadline(
+fun NameTask(
+    color: Color,
+    value: String,
     modifier: Modifier,
-    changeDate: (date: Date) -> Unit
+    onSetName: (s: String) -> Unit
+) {
+
+    Text(
+        text = "Что делать?",
+        color = Color.LightGray,
+        fontSize = 16.sp,
+        modifier = modifier
+    )
+
+    BasicTextField(
+        value = value,
+        onValueChange = onSetName,
+        modifier = modifier.fillMaxWidth(),
+        textStyle = TextStyle(
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp
+        ),
+        cursorBrush = SolidColor(color)
+    )
+
+
+}
+
+@Composable
+fun Deadline(
+    color: Color,
+    modifier: Modifier,
+    changeDate: ( date: LocalDate) -> Unit
 ) {
     var date by remember {
         mutableStateOf(LocalDate.now())
@@ -147,15 +244,21 @@ fun Deadline(
                 changeDate = {
                     year, month, dayOfMonth ->
                     date = LocalDate.of(year, month, dayOfMonth)
+                    changeDate(date)
                 },
                 context = context,
                 date = date
             )
         }) {
-            Icon(painter = painterResource(id = R.drawable.ic_baseline_calendar_month_24)
-                , contentDescription = "")
+            Icon(
+                painter = painterResource(id = R.drawable.ic_baseline_calendar_month_24),
+                contentDescription = "",
+                tint = color
+            )
         }
     }
+
+
 }
 
 fun showDateDialog(
@@ -172,23 +275,78 @@ fun showDateDialog(
 }
 
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun CreateTaskTopBar(
-    onBack: () -> Unit
+fun TaskType(
+    _color: Color,
+    modifier: Modifier,
+    addType: (type: String) -> Unit
 ) {
-    TopAppBar(
-        modifier = Modifier.statusBarsPadding(),
-        title = { Text(text = "Новая задача") },
-        navigationIcon = {
-            IconButton(onClick = onBack) {
-                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "")
-            }
-        },
-        backgroundColor = MaterialTheme.colors.background,
-        elevation = 0.dp
+    val listType = listOf<String>(
+        "Базовое",
+        "Срочное",
+        "Важное",
+        "Покупки",
+        "Школа",
+        "Работа",
+        "Дом",
+        "Ежедневное",
     )
+
+    val (selected, onSelected) = remember { mutableStateOf(listType[0]) }
+
+
+    Text(
+        text = "Тип задачи",
+        color = Color.LightGray,
+        fontSize = 16.sp,
+        modifier = modifier
+    )
+
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(20.dp),
+        contentPadding = PaddingValues(20.dp)
+    ){
+        items(listType){
+               type ->
+            val color = if (type == selected) _color else MaterialTheme.colors.background
+            Surface(
+                shape = CircleShape,
+                onClick = {
+                    addType(type)
+                    onSelected(type)
+                },
+                border = BorderStroke(1.dp, Color.Black),
+                color = color
+            ) {
+                Text(
+                    text = type,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+                )
+            }
+        }
+    }
+
+
 }
 
+@Composable
+fun BottomButton(
+    color: Color,
+    onSave: () -> Unit
+) {
+    Button(
+        onClick = onSave,
+        colors = ButtonDefaults.buttonColors(backgroundColor = color),
+        modifier = Modifier
+            .navigationBarsPadding()
+            .fillMaxWidth()
+            .padding(horizontal = 30.dp, vertical = 10.dp),
+        shape = RoundedCornerShape(20.dp)
+    ) {
+        Text(text = "Сохранить задачу")
+    }
+}
 
 @Preview
 @Composable
