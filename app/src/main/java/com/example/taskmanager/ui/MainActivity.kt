@@ -1,4 +1,4 @@
-package com.example.taskmanager
+package com.example.taskmanager.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -12,8 +12,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.view.WindowCompat
+import com.example.taskmanager.ui.screen.CreateTask
 import com.example.taskmanager.ui.theme.TaskManagerTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,7 +25,9 @@ class MainActivity : ComponentActivity() {
 
 
             TaskManagerTheme {
+                CreateTask(){
 
+                }
             }
         }
     }
